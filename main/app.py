@@ -9,6 +9,8 @@ headers = {
         'partner-token': partner_key
     }
 
+
+
 # Get all avaiable car makes for the given year
 def get_car_makes(year):
     url = f'https://api.carmd.com/v3.0/make?year={year}'
@@ -24,6 +26,8 @@ def get_car_makes(year):
         st.error(f"Error: {response.status_code} - {response.json().get('message', 'Unknown error')}")
         return []
     
+
+
 # Get all avaiable car models for the given make and year
 def get_car_models(year, make):
     url = f'https://api.carmd.com/v3.0/model?year={year}&make={make}'
@@ -39,6 +43,8 @@ def get_car_models(year, make):
         st.error(f"Error: {response.status_code} - {response.json().get('message', 'Unknown error')}")
         return []
     
+
+
 # Get the avaiable engine information about the given year, make, and model of the car
 def get_car_engine(year, make, model):
     url = f'http://api.carmd.com/v3.0/engine?year={year}&make={make}&model={model}'
@@ -49,6 +55,23 @@ def get_car_engine(year, make, model):
             return data['data']
         else:
             st.error("No data found for engine data.")
+            return None
+    else:
+        st.error(f"Error: {response.status_code} - {response.json().get('message', 'Unknown error')}")
+        return None
+    
+
+
+# Get the image of the car based on the year, make, model, and engine information
+def get_car_image(year, make, model, engine):
+    url = f'http://api.carmd.com/v3.0/image?year={year}&make={make}&model={model}&engine={engine}'
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        data = response.json()
+        if 'data' in data:
+            return data['data'][0]['image'] # Returns only the first image rather than a list of images
+        else:
+            st.error("No images found.")
             return None
     else:
         st.error(f"Error: {response.status_code} - {response.json().get('message', 'Unknown error')}")
@@ -87,5 +110,20 @@ if year and make and model:
     if engine_data:
         st.write(f"Engine data for {year}, {make}, {model}.")
         st.json(engine_data)
+    else:
+        st.write("No engine data found.")
+
+if year and make and model:
+    engine_data = get_car_engine(year, make, model)
+    if engine_data:
+        st.write(f"Engine data for {year}, {make}, {model}.")
+        st.json(engine_data)
+        
+        engine_str = engine_data[0]['engine']  # Assumes first engine option
+        car_image = get_car_image(year, make, model, engine_str)
+        if car_image:
+            st.image(car_image, caption=f"{year} {make} {model} with engine {engine_str}", use_column_width=True)
+        else:
+            st.write("No image found.")
     else:
         st.write("No engine data found.")
